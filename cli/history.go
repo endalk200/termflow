@@ -5,18 +5,20 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 	"unicode"
 )
 
-func LoadShellHistory() ([]string, error) {
-	// HISTFILE_LOCATION, ok := os.LookupEnv("HISTFILE")
-	// if !ok {
-	// 	log.Panicf("HISTFILE environment variable is not set")
-	// }
+type ShellHistoryEntry struct {
+	Timestamp  string
+	ReturnType string
+	Command    string
+}
 
-	HISTFILE_LOCATION := "/Users/endalk200/.zsh_history"
+func LoadShellHistory() ([]ShellHistoryEntry, error) {
+	HISTFILE_LOCATION := "/Users//.zsh_history"
 
-	history := []string{}
+	history := []ShellHistoryEntry{}
 
 	file, err := os.Open(HISTFILE_LOCATION)
 	if err != nil {
@@ -28,7 +30,44 @@ func LoadShellHistory() ([]string, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		history = append(history, line)
+		// Ignore lines without the expected format
+		if !strings.HasPrefix(line, ": ") {
+			continue
+		}
+
+		// Parse the line into timestamp, return type, and command
+		parts := strings.SplitN(line, ";", 2)
+		if len(parts) != 2 {
+			continue
+		}
+
+		infoParts := strings.Split(parts[0], ":")
+		if len(infoParts) < 3 {
+			continue
+		}
+
+		var timestamp int64
+		var returnType int
+
+		fmt.Sscanf(infoParts[1], "%d", &timestamp)
+		fmt.Sscanf(infoParts[2], "%d", &returnType)
+
+		timeFormatted := time.Unix(timestamp, 0).Format("2006-01-02 15:04:05")
+
+		var formattedReturnType string
+		if returnType == 0 {
+			formattedReturnType = "OK"
+		} else {
+			formattedReturnType = "ERROR"
+		}
+
+		command := parts[1]
+
+		history = append(history, ShellHistoryEntry{
+			Timestamp:  timeFormatted,
+			ReturnType: formattedReturnType,
+			Command:    command,
+		})
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -36,13 +75,4 @@ func LoadShellHistory() ([]string, error) {
 	}
 
 	return history, nil
-}
-
-// Function to convert Unix timestamp to datetime string
-func timestampToDatetime(timestamp string) string {
-	// Example: timestamp is "1720979874"
-	// Assuming timestamp is in seconds, convert to datetime string
-	// Replace this with your preferred conversion logic based on your requirements
-	// Here we simply use the timestamp as-is for illustration
-	return timestamp
 }

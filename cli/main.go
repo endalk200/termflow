@@ -87,10 +87,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	if m.choice != "" {
-		return quitTextStyle.Render(fmt.Sprintf("%s? Sounds good to me.", m.choice))
+		return quitTextStyle.Render(fmt.Sprintf("%s? Bookmarking selected command", m.choice))
 	}
 	if m.quitting {
-		return quitTextStyle.Render("Not hungry? That’s cool.")
+		return quitTextStyle.Render("Exiting")
 	}
 	return "\n" + m.list.View()
 }
@@ -104,7 +104,7 @@ func main() {
 	// Convert history entries to items
 	historyItems := make([]list.Item, len(history))
 	for i, h := range history {
-		historyItems[i] = item(h)
+		historyItems[i] = item(fmt.Sprintf("%s, %s, %s", h.Timestamp, h.ReturnType, h.Command))
 	}
 
 	// Initial items
@@ -116,7 +116,7 @@ func main() {
 	const defaultWidth = 40
 
 	l := list.New(items, itemDelegate{}, defaultWidth, listHeight)
-	l.Title = "What do you want for dinner?"
+	l.Title = "Select a command history to bookmark"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 	l.Styles.Title = titleStyle
