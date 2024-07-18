@@ -125,9 +125,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_userId := user.Id
+
+	log.Printf("UserId: %v", _userId)
 	claims := jwt.RegisteredClaims{
 		Issuer:    "twoMatchesCorp",
-		Subject:   string(user.Id),
+		Subject:   "1",
 		Audience:  jwt.ClaimStrings{"admin"},
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),

@@ -28,7 +28,7 @@ const AuthUserId = "middleware.auth.userID"
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rawAuthorizationHeader := r.Header.Get("Authorization")
-		if rawAuthorizationHeader == "" {
+		if rawAuthorizationHeader == "" && len(strings.Split(rawAuthorizationHeader, " ")) != 2 {
 			log.Printf("No Bearer token provided")
 			http.Error(w, "Unauthorized API call", http.StatusUnauthorized)
 			return
