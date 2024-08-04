@@ -54,6 +54,8 @@ resource "azurerm_linux_virtual_machine" "vm" {
   computer_name  = "hostname"
   admin_username = var.username
 
+  custom_data = filebase64("./cloud-init.txt")
+
   admin_ssh_key {
     username   = var.username
     public_key = azapi_resource_action.ssh_public_key_gen.output.publicKey
