@@ -1,6 +1,6 @@
 variable "resource_group_name" {
   type    = string
-  default = "remote_dev"
+  default = "termflow"
 }
 
 variable "region" {

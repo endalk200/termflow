@@ -1,6 +1,6 @@
 # Create virtual network
 resource "azurerm_virtual_network" "vn" {
-  name                = "remote_dev_vn"
+  name                = "termflow-vn"
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -8,7 +8,7 @@ resource "azurerm_virtual_network" "vn" {
 
 # Create subnet
 resource "azurerm_subnet" "sn" {
-  name                 = "remote_dev_subnet"
+  name                 = "termflow-vn"
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vn.name
   address_prefixes     = ["10.0.1.0/24"]
@@ -16,7 +16,7 @@ resource "azurerm_subnet" "sn" {
 
 # Create public IPs
 resource "azurerm_public_ip" "pi" {
-  name                = "remote_dev_pi"
+  name                = "termflow-pi"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   allocation_method   = "Dynamic"
@@ -24,7 +24,7 @@ resource "azurerm_public_ip" "pi" {
 
 # Create Network Security Group and rule
 resource "azurerm_network_security_group" "nsg" {
-  name                = "remote_dev_nsg"
+  name                = "termflow-nsg"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
@@ -48,12 +48,12 @@ output "public_ip_address" {
 
 # Create network interface
 resource "azurerm_network_interface" "nic" {
-  name                = "remote_dev_nic"
+  name                = "termflow-nic"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
   ip_configuration {
-    name                          = "my_nic_configuration"
+    name                          = "termflow-nic-configuration"
     subnet_id                     = azurerm_subnet.sn.id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.pi.id
@@ -61,7 +61,7 @@ resource "azurerm_network_interface" "nic" {
 }
 
 # Connect the security group to the network interface
-resource "azurerm_network_interface_security_group_association" "example" {
+resource "azurerm_network_interface_security_group_association" "nsg-nic-association" {
   network_interface_id      = azurerm_network_interface.nic.id
   network_security_group_id = azurerm_network_security_group.nsg.id
 }

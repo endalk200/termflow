@@ -23,7 +23,7 @@ provider "azurerm" {
 
 # Create storage account for boot diagnostics
 resource "azurerm_storage_account" "sa" {
-  name                     = "remotedevsa"
+  name                     = "termflow"
   location                 = azurerm_resource_group.rg.location
   resource_group_name      = azurerm_resource_group.rg.name
   account_tier             = "Standard"
@@ -32,7 +32,7 @@ resource "azurerm_storage_account" "sa" {
 
 # Create virtual machine
 resource "azurerm_linux_virtual_machine" "vm" {
-  name                  = "remote_dev_vm"
+  name                  = "termflow-prod-vm"
   location              = azurerm_resource_group.rg.location
   resource_group_name   = azurerm_resource_group.rg.name
   network_interface_ids = [azurerm_network_interface.nic.id]
