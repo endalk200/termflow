@@ -47,7 +47,8 @@ jobs:
           login-server: ${{ env.ACR_LOGIN_SERVER }}
           username: ${{ env.ACR_ADMIN_USERNAME }}
           password: ${{ env.ACR_ADMIN_PASSWORD }}
+
       - run: |
-          docker build -t termflow-api:latest .
+          docker build -t termflow-api:latest -f api/Dockerfile.prod api
           docker tag termflow-api:latest ${{ env.ACR_LOGIN_SERVER }}/termflow-api:${{ steps.commit.outputs.short }}
           docker push ${{ env.ACR_LOGIN_SERVER }}/termflow-api:${{ steps.commit.outputs.short }}
