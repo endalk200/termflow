@@ -1,9 +1,6 @@
 ---
 services:
   api:
-    image: termflow-api
-    build:
-      context: .
-      dockerfile: ./Dockerfile.prod
+    image: tmplatformdevcontainerregistry.azurecr.io/termflow-api:94030b5
     ports:
-      - "3000:3000"
+      - "80:80"

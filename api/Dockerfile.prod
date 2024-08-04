@@ -15,7 +15,8 @@ WORKDIR /
 
 COPY --from=build-stage /termflow-api /termflow-api
 
-EXPOSE 3000 
+EXPOSE 80
+EXPOSE 443
 
 USER nonroot:nonroot
 

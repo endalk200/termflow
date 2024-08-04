@@ -27,7 +27,7 @@ func main() {
 	stack := CreateStack(LoggingMiddleware)
 
 	server := http.Server{
-		Addr:    ":3000",
+		Addr:    ":80",
 		Handler: stack(router),
 	}
 

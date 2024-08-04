@@ -3,6 +3,10 @@ name: Build and push image to acr
 
 on:
   push:
+    paths-ignore:
+      - "README"
+      - "cli/*"
+      - "infrastructure/*"
     branches: [main]
 
   workflow_dispatch:
