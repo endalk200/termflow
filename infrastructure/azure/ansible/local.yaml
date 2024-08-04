@@ -1,0 +1,13 @@
+- hosts: localhost
+  pre_tasks:
+    - name: Update Apt
+      become: true
+      apt:
+        force_apt_get: true
+        update_cache: true
+      tags:
+        - install
+        - core
+  tasks:
+    - include_tasks: ./tasks/core.yaml
+    - include_tasks: ./tasks/docker.yaml

@@ -1,0 +1,8 @@
+---
+- name: Initial Setup of Cloud Instance
+  hosts: localhost
+  tasks:
+    - name: Install NGINX
+      apt:
+        name: nginx
+        state: present

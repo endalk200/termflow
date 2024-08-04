@@ -1,0 +1,42 @@
+---
+- name: Install System Packages 1 (build-essential, cmake, pkg-config, pthread)
+  become: true
+  apt:
+    name: ["build-essential", "cmake", "pkg-config", "libpthread-stubs0-dev"]
+  tags:
+    - core
+
+- name: Install System Packages 2 (lua, unzip, libtool, libtool-bin, gettext)
+  become: true
+  apt:
+    name:
+      [
+        "lua5.1",
+        "unzip",
+        "libtool",
+        "libtool-bin",
+        "gettext",
+        "software-properties-common",
+      ]
+  tags:
+    - install
+    - core
+
+- name: Install System Packages 3 (the rest)
+  become: true
+  apt:
+    name:
+      [
+        "apt-transport-https",
+        "ca-certificates",
+        "compton",
+        "curl",
+        "htop",
+        "lsof",
+        "ccache",
+        "ninja-build",
+        "moreutils",
+      ]
+  tags:
+    - install
+    - core
