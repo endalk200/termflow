@@ -1,4 +1,4 @@
-module github.com/endalk200/http-server
+module github.com/endalk200/termflow-api
 
 go 1.22.3
 

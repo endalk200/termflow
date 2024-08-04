@@ -67,3 +67,5 @@ id_rsa.pub
 terraform.tfvars
 
 .env.sh
+cli/termflow-cli
+

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	jwtutils "github.com/endalk200/http-server/utils"
+	jwtutils "github.com/endalk200/termflow-api/utils"
 )
 
 type Middleware func(http.Handler) http.Handler

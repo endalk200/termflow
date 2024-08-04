@@ -11,8 +11,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/endalk200/http-server/data"
-	jwtutils "github.com/endalk200/http-server/utils"
+	"github.com/endalk200/termflow-api/data"
+	jwtutils "github.com/endalk200/termflow-api/utils"
 )
 
 var SECRET_KEY = []byte("your-secret-key")
