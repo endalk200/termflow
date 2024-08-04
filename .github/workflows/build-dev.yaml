@@ -1,0 +1,53 @@
+---
+name: Build and push image to acr
+
+on:
+  push:
+    branches: [main]
+
+  workflow_dispatch:
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - id: commit
+        uses: pr-mpt/actions-commit-hash@v2
+
+      - name: Log in with Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Fetch ACR server name from Azure Key Vault
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            ACR_LOGIN_SERVER=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name ACR-LOGIN-SERVER --query value -o tsv)
+            echo "ACR_LOGIN_SERVER=$ACR_LOGIN_SERVER" >> $GITHUB_ENV
+
+      - name: Fetch ACR admin username from Azure Key Vault
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            ACR_ADMIN_USERNAME=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name ACR-ADMIN-USERNAME --query value -o tsv)
+            echo "ACR_ADMIN_USERNAME=$ACR_ADMIN_USERNAME" >> $GITHUB_ENV
+
+      - name: Fetch ACR admin password from Azure Key Vault
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            ACR_ADMIN_PASSWORD=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name ACR-ADMIN-PASSWORD --query value -o tsv)
+            echo "ACR_ADMIN_PASSWORD=$ACR_ADMIN_PASSWORD" >> $GITHUB_ENV
+
+      - uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ env.ACR_ADMIN_USERNAME }}
+          password: ${{ env.ACR_ADMIN_PASSWORD }}
+      - run: |
+          docker build -t termflow-api:latest .
+          docker tag termflow-api:latest ${{ env.ACR_LOGIN_SERVER }}/termflow-api:${{ steps.commit.outputs.short }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/termflow-api:${{ steps.commit.outputs.short }}
