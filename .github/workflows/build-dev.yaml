@@ -5,8 +5,9 @@ on:
   push:
     paths-ignore:
       - "README"
-      - "cli/*"
-      - "infrastructure/*"
+      - "docs/**"
+      - "cli/**"
+      - "infrastructure/**"
     branches: [main]
 
   workflow_dispatch:

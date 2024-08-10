@@ -1,4 +1,4 @@
-package jwtutils
+package helpers
 
 import (
 	"crypto/ed25519"

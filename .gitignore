@@ -43,6 +43,8 @@ crash.log
 # Terraform Variable Files
 *.tfvars
 *.tfvars.json
+*.tfplan
+tfplan.txt
 
 # .terraform Directory
 .terraform/

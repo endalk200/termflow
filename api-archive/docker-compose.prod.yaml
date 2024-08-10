@@ -1,6 +1,0 @@
----
-services:
-  api:
-    image: tmplatformdevcontainerregistry.azurecr.io/termflow-api:94030b5
-    ports:
-      - "80:80"
