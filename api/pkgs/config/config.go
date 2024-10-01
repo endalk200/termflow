@@ -9,12 +9,11 @@ import (
 
 // AppConfig holds all configuration for the application
 type AppConfig struct {
-	Port            int    `env:"PORT" default:"8080"`
-	ApplicationPort int    `env:"APPLICATION_PORT" default:"8080"`
+	ApplicationPort int    `env:"APPLICATION_PORT" default:"3000"`
 	DbHost          string `env:"DB_HOST" required:"true"`
 	DbPort          int    `env:"DB_PORT" default:"5432"`
-	DbUser          string `env:"DB_USER" required:"true"`
-	DbPass          string `env:"DB_PASS" required:"true"`
+	DbUsername      string `env:"DB_USERNAME" required:"true"`
+	DbPassword      string `env:"DB_PASSWORD" required:"true"`
 	DbName          string `env:"DB_NAME" required:"true"`
 	LogLevel        string `env:"LOG_LEVEL" default:"INFO"`
 }
