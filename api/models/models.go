@@ -13,6 +13,7 @@ type User struct {
 	FirstName       string
 	LastName        string
 	Password        string
+	RefreshToken    pgtype.Text
 	Email           string
 	IsEmailVerified pgtype.Bool
 	IsActive        pgtype.Bool

@@ -17,7 +17,7 @@ INSERT INTO users (
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7
 )
-RETURNING id, first_name, last_name, password, email, is_email_verified, is_active, github_handle
+RETURNING id, first_name, last_name, password, refresh_token, email, is_email_verified, is_active, github_handle
 `
 
 type CreateUserParams struct {
@@ -46,6 +46,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.FirstName,
 		&i.LastName,
 		&i.Password,
+		&i.RefreshToken,
 		&i.Email,
 		&i.IsEmailVerified,
 		&i.IsActive,
@@ -65,18 +66,26 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, first_name, last_name, password, email, is_email_verified, is_active, github_handle FROM users 
-WHERE id = $1 LIMIT 1
+SELECT id, first_name, last_name, password, refresh_token, email, is_email_verified, is_active, github_handle FROM users
+WHERE (id = $1 OR github_handle = $2 OR email = $3)
+LIMIT 1
 `
 
-func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
-	row := q.db.QueryRow(ctx, getUser, id)
+type GetUserParams struct {
+	ID           int32
+	GithubHandle pgtype.Text
+	Email        string
+}
+
+func (q *Queries) GetUser(ctx context.Context, arg GetUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, getUser, arg.ID, arg.GithubHandle, arg.Email)
 	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.FirstName,
 		&i.LastName,
 		&i.Password,
+		&i.RefreshToken,
 		&i.Email,
 		&i.IsEmailVerified,
 		&i.IsActive,
@@ -86,12 +95,19 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, first_name, last_name, password, email, is_email_verified, is_active, github_handle FROM users 
+SELECT id, first_name, last_name, password, refresh_token, email, is_email_verified, is_active, github_handle FROM users
+WHERE ($1 IS NULL OR is_active = $1)
+AND ($2 IS NULL OR is_email_verified = $2)
 ORDER BY first_name
 `
 
-func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.Query(ctx, listUsers)
+type ListUsersParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error) {
+	rows, err := q.db.Query(ctx, listUsers, arg.Column1, arg.Column2)
 	if err != nil {
 		return nil, err
 	}
@@ -104,6 +120,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.FirstName,
 			&i.LastName,
 			&i.Password,
+			&i.RefreshToken,
 			&i.Email,
 			&i.IsEmailVerified,
 			&i.IsActive,

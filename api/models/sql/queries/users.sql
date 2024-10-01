@@ -1,9 +1,12 @@
 -- name: GetUser :one
-SELECT * FROM users 
-WHERE id = $1 LIMIT 1;
+SELECT * FROM users
+WHERE (id = $1 OR github_handle = $2 OR email = $3)
+LIMIT 1;
 
 -- name: ListUsers :many
-SELECT * FROM users 
+SELECT * FROM users
+WHERE ($1 IS NULL OR is_active = $1)
+AND ($2 IS NULL OR is_email_verified = $2)
 ORDER BY first_name;
 
 -- name: CreateUser :one
