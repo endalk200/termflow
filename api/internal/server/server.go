@@ -3,39 +3,45 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
-	"os"
-	"strconv"
 	"time"
 
-	"github.com/endalk200/termflow-api/internal/database"
+	"github.com/endalk200/termflow-api/models"
+	"github.com/endalk200/termflow-api/pkgs/config"
 	_ "github.com/joho/godotenv/autoload"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Server struct {
-	port int
-
-	db *database.Queries
+	port   int
+	cfg    config.AppConfig
+	logger *slog.Logger
+	db     *models.Queries
 }
 
-func NewServer() *http.Server {
-	port, _ := strconv.Atoi(os.Getenv("PORT"))
+func NewServer(logger *slog.Logger) *http.Server {
+	var cfg config.AppConfig
+	err := config.LoadConfig(&cfg)
 
-	dbConnectionString := "postgres://admin:admin@localhost:5432/my-db?sslmode=disable"
-
-	connection, err := pgxpool.New(context.Background(), dbConnectionString)
+	databaseConnectionUri, err := config.ConstructDatabaseUrl(cfg)
 	if err != nil {
-		log.Fatalf("Unable to create connection pool: %v", err)
+		logger.Error("Error while constructing DATABASE_URI", slog.String("ERROR", err.Error()))
 	}
 
-	queries := database.New(connection)
+	connection, err := pgxpool.New(context.Background(), databaseConnectionUri)
+	if err != nil {
+		logger.Error("Unable to create connection pool", slog.String("ERROR", err.Error()))
+	}
+
+	queries := models.New(connection)
 
 	NewServer := &Server{
-		port: port,
-		db:   queries,
+		port:   cfg.ApplicationPort,
+		logger: logger,
+		cfg:    cfg,
+		db:     queries,
 	}
 
 	server := &http.Server{
@@ -45,6 +51,8 @@ func NewServer() *http.Server {
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
+
+	logger.Info("Server listening", slog.String("addr", ":8080"))
 
 	return server
 }

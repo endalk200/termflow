@@ -17,7 +17,6 @@ type testCfg struct {
 
 // TestLoadConfig_SuccessWithEnvVariables tests LoadConfig with all environment variables set
 func TestLoadConfig_SuccessWithEnvVariables(t *testing.T) {
-	// Setting environment variables
 	os.Setenv("APPLICATION_PORT", "8081")
 	os.Setenv("DB_HOST", "localhost")
 	os.Setenv("DB_PORT", "3306")
@@ -66,7 +65,7 @@ func TestLoadConfig_UseDefaultValues(t *testing.T) {
 	os.Setenv("DB_PASS", "password")
 	os.Setenv("DB_NAME", "testdb")
 
-	var cfg AppConfig
+	var cfg testCfg
 
 	// Call LoadConfig
 	err := LoadConfig(&cfg)
@@ -74,10 +73,6 @@ func TestLoadConfig_UseDefaultValues(t *testing.T) {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	// Check default values
-	if cfg.Port != 8080 {
-		t.Errorf("Expected default Port to be 8080, got %d", cfg.Port)
-	}
 	if cfg.ApplicationPort != 8080 {
 		t.Errorf("Expected default ApplicationPort to be 8080, got %d", cfg.ApplicationPort)
 	}

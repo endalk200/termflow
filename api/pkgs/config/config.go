@@ -84,3 +84,8 @@ func setFieldValue(field reflect.Value, value string) error {
 
 	return nil
 }
+
+func ConstructDatabaseUrl(cfg AppConfig) (string, error) {
+
+	return fmt.Sprintf("postgres://%s:%s@localhost:5432/%s?sslmode=disable", cfg.DbUsername, cfg.DbPassword, cfg.DbName), nil
+}
