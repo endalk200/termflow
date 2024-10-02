@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	issuer = "Company"
+	issuer = "Termflow"
 )
 
 // Load private key from private key file locally
@@ -65,7 +65,7 @@ func LoadPublicKey(path string) (ed25519.PublicKey, error) {
 }
 
 func GenerateJWT(claims jwt.RegisteredClaims) (string, error) {
-	privateKey, err := LoadPrivateKey("../../test/test_private_key.pem")
+	privateKey, err := LoadPrivateKey("./test/test_private_key.pem")
 	if err != nil {
 		return "", fmt.Errorf("Error loading private key: %s", err)
 	}
@@ -83,7 +83,7 @@ func GenerateJWT(claims jwt.RegisteredClaims) (string, error) {
 }
 
 func VerifyJWT(tokenString string) (*jwt.Token, error) {
-	publicKey, err := LoadPublicKey("../../test/test_public_key.pem")
+	publicKey, err := LoadPublicKey("./test/test_public_key.pem")
 	if err != nil {
 		return nil, fmt.Errorf("Error loading public key: %s", err)
 	}

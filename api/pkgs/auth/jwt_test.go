@@ -1,10 +1,11 @@
-package auth
+package auth_test
 
 import (
 	"os"
 	"testing"
 	"time"
 
+	"github.com/endalk200/termflow-api/pkgs/auth"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,14 +15,14 @@ const testPublicKeyPath = "../../test/test_public_key.pem"
 
 // Test LoadPrivateKey
 func TestLoadPrivateKey(t *testing.T) {
-	privateKey, err := LoadPrivateKey(testPrivateKeyPath)
+	privateKey, err := auth.LoadPrivateKey(testPrivateKeyPath)
 	assert.NoError(t, err, "Loading private key should not return an error")
 	assert.NotNil(t, privateKey, "Private key should not be nil")
 }
 
 // Test LoadPublicKey
 func TestLoadPublicKey(t *testing.T) {
-	publicKey, err := LoadPublicKey(testPublicKeyPath)
+	publicKey, err := auth.LoadPublicKey(testPublicKeyPath)
 	assert.NoError(t, err, "Loading public key should not return an error")
 	assert.NotNil(t, publicKey, "Public key should not be nil")
 }
@@ -37,7 +38,7 @@ func TestGenerateJWT(t *testing.T) {
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 	}
 
-	tokenString, err := GenerateJWT(claims)
+	tokenString, err := auth.GenerateJWT(claims)
 	assert.NoError(t, err, "Generating JWT should not return an error")
 	assert.NotEmpty(t, tokenString, "Generated token should not be empty")
 }
@@ -52,11 +53,11 @@ func TestVerifyJWT(t *testing.T) {
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 	}
-	tokenString, err := GenerateJWT(claims)
+	tokenString, err := auth.GenerateJWT(claims)
 	assert.NoError(t, err, "Generating valid JWT should not return an error")
 
 	// Verify JWT
-	token, err := VerifyJWT(tokenString)
+	token, err := auth.VerifyJWT(tokenString)
 	assert.NoError(t, err, "Verifying valid JWT should not return an error")
 	assert.True(t, token.Valid, "Token should be valid")
 
@@ -72,19 +73,19 @@ func TestVerifyJWT(t *testing.T) {
 func TestVerifyJWT_Invalid(t *testing.T) {
 	invalidTokenString := "invalid.token.string"
 
-	_, err := VerifyJWT(invalidTokenString)
+	_, err := auth.VerifyJWT(invalidTokenString)
 	assert.Error(t, err, "Verifying an invalid token should return an error")
 }
 
 // Test LoadPrivateKey - invalid file path
 func TestLoadPrivateKey_InvalidPath(t *testing.T) {
-	_, err := LoadPrivateKey("invalid_private_key_path.pem")
+	_, err := auth.LoadPrivateKey("invalid_private_key_path.pem")
 	assert.Error(t, err, "Loading private key from invalid path should return an error")
 }
 
 // Test LoadPublicKey - invalid file path
 func TestLoadPublicKey_InvalidPath(t *testing.T) {
-	_, err := LoadPublicKey("invalid_public_key_path.pem")
+	_, err := auth.LoadPublicKey("invalid_public_key_path.pem")
 	assert.Error(t, err, "Loading public key from invalid path should return an error")
 }
 
