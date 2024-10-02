@@ -94,6 +94,56 @@ func (q *Queries) GetUser(ctx context.Context, arg GetUserParams) (User, error) 
 	return i, err
 }
 
+const getUserWithRefreshTokens = `-- name: GetUserWithRefreshTokens :one
+SELECT u.id, u.first_name, u.last_name, u.password, u.refresh_token, u.email, u.is_email_verified, u.is_active, u.github_handle, rt.id, rt.user_id, rt.token_hash, rt.issued_at, rt.expires_at, rt.revoked, rt.revoked_at
+FROM users u
+LEFT JOIN refresh_tokens rt ON u.id = rt.user_id
+WHERE u.id = $1
+`
+
+type GetUserWithRefreshTokensRow struct {
+	ID              int32
+	FirstName       string
+	LastName        string
+	Password        string
+	RefreshToken    pgtype.Text
+	Email           string
+	IsEmailVerified pgtype.Bool
+	IsActive        pgtype.Bool
+	GithubHandle    pgtype.Text
+	ID_2            pgtype.Int4
+	UserID          pgtype.Int8
+	TokenHash       pgtype.Text
+	IssuedAt        pgtype.Timestamp
+	ExpiresAt       pgtype.Timestamp
+	Revoked         pgtype.Bool
+	RevokedAt       pgtype.Timestamp
+}
+
+func (q *Queries) GetUserWithRefreshTokens(ctx context.Context, id int32) (GetUserWithRefreshTokensRow, error) {
+	row := q.db.QueryRow(ctx, getUserWithRefreshTokens, id)
+	var i GetUserWithRefreshTokensRow
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Password,
+		&i.RefreshToken,
+		&i.Email,
+		&i.IsEmailVerified,
+		&i.IsActive,
+		&i.GithubHandle,
+		&i.ID_2,
+		&i.UserID,
+		&i.TokenHash,
+		&i.IssuedAt,
+		&i.ExpiresAt,
+		&i.Revoked,
+		&i.RevokedAt,
+	)
+	return i, err
+}
+
 const listUsers = `-- name: ListUsers :many
 SELECT id, first_name, last_name, password, refresh_token, email, is_email_verified, is_active, github_handle FROM users
 WHERE ($1 IS NULL OR is_active = $1)

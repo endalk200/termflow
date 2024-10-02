@@ -3,6 +3,12 @@ SELECT * FROM users
 WHERE (id = $1 OR github_handle = $2 OR email = $3)
 LIMIT 1;
 
+-- name: GetUserWithRefreshTokens :one
+SELECT u.*, rt.*
+FROM users u
+LEFT JOIN refresh_tokens rt ON u.id = rt.user_id
+WHERE u.id = $1;
+
 -- name: ListUsers :many
 SELECT * FROM users
 WHERE ($1 IS NULL OR is_active = $1)

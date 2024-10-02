@@ -8,6 +8,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type RefreshToken struct {
+	ID        int32
+	UserID    pgtype.Int8
+	TokenHash string
+	IssuedAt  pgtype.Timestamp
+	ExpiresAt pgtype.Timestamp
+	Revoked   pgtype.Bool
+	RevokedAt pgtype.Timestamp
+}
+
 type User struct {
 	ID              int32
 	FirstName       string
