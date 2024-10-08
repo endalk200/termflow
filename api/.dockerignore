@@ -5,3 +5,4 @@ Dockerfile.*
 Dockerfile
 docker-compose.yaml
 docker-compose.prod.yaml
+vendor/
