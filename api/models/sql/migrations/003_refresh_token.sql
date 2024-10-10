@@ -5,11 +5,8 @@ CREATE TABLE refresh_tokens (
 
   token_hash      TEXT NOT NULL,
 
-  issued_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  expires_at      TIMESTAMP NOT NULL,
-
-  revoked         BOOLEAN DEFAULT FALSE,
-  revoked_at      TIMESTAMP
+  issued_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL
 );
 
 -- +goose Down 

@@ -8,14 +8,35 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Command struct {
+	ID          int32
+	UserID      int32
+	Command     string
+	Description string
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
+type CommandTag struct {
+	CommandID int32
+	TagID     int32
+}
+
 type RefreshToken struct {
 	ID        int32
 	UserID    pgtype.Int8
 	TokenHash string
-	IssuedAt  pgtype.Timestamp
-	ExpiresAt pgtype.Timestamp
-	Revoked   pgtype.Bool
-	RevokedAt pgtype.Timestamp
+	IssuedAt  pgtype.Timestamptz
+	ExpiresAt pgtype.Timestamptz
+}
+
+type Tag struct {
+	ID          int32
+	UserID      int32
+	Name        string
+	Description pgtype.Text
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
 }
 
 type User struct {
@@ -27,5 +48,6 @@ type User struct {
 	Email           string
 	IsEmailVerified pgtype.Bool
 	IsActive        pgtype.Bool
-	GithubHandle    pgtype.Text
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
 }

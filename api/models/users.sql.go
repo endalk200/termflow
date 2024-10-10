@@ -13,11 +13,11 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-  first_name, last_name, email, is_email_verified, is_active, github_handle, password
+  first_name, last_name, email, is_email_verified, is_active, password
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7
+  $1, $2, $3, $4, $5, $6
 )
-RETURNING id, first_name, last_name, password, refresh_token, email, is_email_verified, is_active, github_handle
+RETURNING id, first_name, last_name, password, refresh_token, email, is_email_verified, is_active, created_at, updated_at
 `
 
 type CreateUserParams struct {
@@ -26,7 +26,6 @@ type CreateUserParams struct {
 	Email           string
 	IsEmailVerified pgtype.Bool
 	IsActive        pgtype.Bool
-	GithubHandle    pgtype.Text
 	Password        string
 }
 
@@ -37,7 +36,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Email,
 		arg.IsEmailVerified,
 		arg.IsActive,
-		arg.GithubHandle,
 		arg.Password,
 	)
 	var i User
@@ -50,7 +48,8 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Email,
 		&i.IsEmailVerified,
 		&i.IsActive,
-		&i.GithubHandle,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -66,19 +65,18 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, first_name, last_name, password, refresh_token, email, is_email_verified, is_active, github_handle FROM users
-WHERE (id = $1 OR github_handle = $2 OR email = $3)
+SELECT id, first_name, last_name, password, refresh_token, email, is_email_verified, is_active, created_at, updated_at FROM users
+WHERE (id = $1 OR email = $2)
 LIMIT 1
 `
 
 type GetUserParams struct {
-	ID           int32
-	GithubHandle pgtype.Text
-	Email        string
+	ID    int32
+	Email string
 }
 
 func (q *Queries) GetUser(ctx context.Context, arg GetUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, getUser, arg.ID, arg.GithubHandle, arg.Email)
+	row := q.db.QueryRow(ctx, getUser, arg.ID, arg.Email)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -89,13 +87,14 @@ func (q *Queries) GetUser(ctx context.Context, arg GetUserParams) (User, error) 
 		&i.Email,
 		&i.IsEmailVerified,
 		&i.IsActive,
-		&i.GithubHandle,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const getUserWithRefreshTokens = `-- name: GetUserWithRefreshTokens :one
-SELECT u.id, u.first_name, u.last_name, u.password, u.refresh_token, u.email, u.is_email_verified, u.is_active, u.github_handle, rt.id, rt.user_id, rt.token_hash, rt.issued_at, rt.expires_at, rt.revoked, rt.revoked_at
+SELECT u.id, u.first_name, u.last_name, u.password, u.refresh_token, u.email, u.is_email_verified, u.is_active, u.created_at, u.updated_at, rt.id, rt.user_id, rt.token_hash, rt.issued_at, rt.expires_at
 FROM users u
 LEFT JOIN refresh_tokens rt ON u.id = rt.user_id
 WHERE u.id = $1
@@ -110,14 +109,13 @@ type GetUserWithRefreshTokensRow struct {
 	Email           string
 	IsEmailVerified pgtype.Bool
 	IsActive        pgtype.Bool
-	GithubHandle    pgtype.Text
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
 	ID_2            pgtype.Int4
 	UserID          pgtype.Int8
 	TokenHash       pgtype.Text
-	IssuedAt        pgtype.Timestamp
-	ExpiresAt       pgtype.Timestamp
-	Revoked         pgtype.Bool
-	RevokedAt       pgtype.Timestamp
+	IssuedAt        pgtype.Timestamptz
+	ExpiresAt       pgtype.Timestamptz
 }
 
 func (q *Queries) GetUserWithRefreshTokens(ctx context.Context, id int32) (GetUserWithRefreshTokensRow, error) {
@@ -132,20 +130,19 @@ func (q *Queries) GetUserWithRefreshTokens(ctx context.Context, id int32) (GetUs
 		&i.Email,
 		&i.IsEmailVerified,
 		&i.IsActive,
-		&i.GithubHandle,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 		&i.ID_2,
 		&i.UserID,
 		&i.TokenHash,
 		&i.IssuedAt,
 		&i.ExpiresAt,
-		&i.Revoked,
-		&i.RevokedAt,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, first_name, last_name, password, refresh_token, email, is_email_verified, is_active, github_handle FROM users
+SELECT id, first_name, last_name, password, refresh_token, email, is_email_verified, is_active, created_at, updated_at FROM users
 WHERE ($1 IS NULL OR is_active = $1)
 AND ($2 IS NULL OR is_email_verified = $2)
 ORDER BY first_name
@@ -174,7 +171,8 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 			&i.Email,
 			&i.IsEmailVerified,
 			&i.IsActive,
-			&i.GithubHandle,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}

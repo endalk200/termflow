@@ -29,7 +29,7 @@ VALUES ($1, $2, $3)
 type CreateRefreshTokenParams struct {
 	UserID    pgtype.Int8
 	TokenHash string
-	ExpiresAt pgtype.Timestamp
+	ExpiresAt pgtype.Timestamptz
 }
 
 func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error {
@@ -48,7 +48,7 @@ func (q *Queries) DeleteRefreshToken(ctx context.Context, id int32) error {
 }
 
 const getAllRefreshTokensByUserID = `-- name: GetAllRefreshTokensByUserID :many
-SELECT id, user_id, token_hash, issued_at, expires_at, revoked, revoked_at
+SELECT id, user_id, token_hash, issued_at, expires_at
 FROM refresh_tokens
 WHERE user_id = $1
 `
@@ -68,8 +68,6 @@ func (q *Queries) GetAllRefreshTokensByUserID(ctx context.Context, userID pgtype
 			&i.TokenHash,
 			&i.IssuedAt,
 			&i.ExpiresAt,
-			&i.Revoked,
-			&i.RevokedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -82,7 +80,7 @@ func (q *Queries) GetAllRefreshTokensByUserID(ctx context.Context, userID pgtype
 }
 
 const getRefreshTokenByUserID = `-- name: GetRefreshTokenByUserID :one
-SELECT id, user_id, token_hash, issued_at, expires_at, revoked, revoked_at
+SELECT id, user_id, token_hash, issued_at, expires_at
 FROM refresh_tokens
 WHERE user_id = $1 AND revoked = FALSE
 LIMIT 1
@@ -97,8 +95,6 @@ func (q *Queries) GetRefreshTokenByUserID(ctx context.Context, userID pgtype.Int
 		&i.TokenHash,
 		&i.IssuedAt,
 		&i.ExpiresAt,
-		&i.Revoked,
-		&i.RevokedAt,
 	)
 	return i, err
 }

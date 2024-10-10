@@ -4,8 +4,10 @@ CREATE TABLE commands (
   user_id INT NOT NULL,
   command TEXT NOT NULL,
   description TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -14,8 +16,10 @@ CREATE TABLE tags (
   user_id INT NOT NULL,
   name VARCHAR(255) NOT NULL,
   description TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
   UNIQUE (user_id, name), -- Ensures a user cannot have duplicate tag names
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -28,6 +32,20 @@ CREATE TABLE command_tags (
   FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 );
 
+-- CREATE TRIGGER update_commands_updated_at
+-- BEFORE UPDATE ON commands
+-- FOR EACH ROW
+-- EXECUTE FUNCTION update_updated_at_column();
+--
+-- CREATE TRIGGER update_tags_updated_at
+-- BEFORE UPDATE ON tags
+-- FOR EACH ROW
+-- EXECUTE FUNCTION update_updated_at_column();
+
 -- +goose Down 
-DROP TABLE tags;
+-- DROP TRIGGER IF EXISTS update_commands_updated_at ON commands;
+-- DROP TRIGGER IF EXISTS update_tags_updated_at ON tags;
+
 DROP TABLE command_tags;
+DROP TABLE tags;
+DROP TABLE commands;
