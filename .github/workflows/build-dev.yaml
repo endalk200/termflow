@@ -1,59 +1,58 @@
 ---
-name: Build and push image to acr
+name: Create and publish a Docker image
 
 on:
   push:
-    paths-ignore:
-      - "README"
-      - "docs/**"
-      - "cli/**"
-      - "infrastructure/**"
-    branches: [main]
+    branches: ["main"]
+    paths:
+      - "api/**"
 
-  workflow_dispatch:
+# Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
+env:
+  REGISTRY: ghcr.io
+  # IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: termflow-api
+
 jobs:
-  build-and-deploy:
+  build-and-push-image:
     runs-on: ubuntu-latest
+    # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - id: commit
-        uses: pr-mpt/actions-commit-hash@v2
-
-      - name: Log in with Azure
-        uses: azure/login@v1
+        uses: actions/checkout@v4
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Fetch ACR server name from Azure Key Vault
-        uses: azure/cli@v2
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # This step uses [docker/metadata-action](https://github.com/docker/metadata-action#about) to extract tags and labels that will be applied to the specified image. The `id` "meta" allows the output of this step to be referenced in a subsequent step. The `images` value provides the base name for the tags and labels.
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-          inlineScript: |
-            ACR_LOGIN_SERVER=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name ACR-LOGIN-SERVER --query value -o tsv)
-            echo "ACR_LOGIN_SERVER=$ACR_LOGIN_SERVER" >> $GITHUB_ENV
-
-      - name: Fetch ACR admin username from Azure Key Vault
-        uses: azure/cli@v2
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
-          inlineScript: |
-            ACR_ADMIN_USERNAME=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name ACR-ADMIN-USERNAME --query value -o tsv)
-            echo "ACR_ADMIN_USERNAME=$ACR_ADMIN_USERNAME" >> $GITHUB_ENV
+          context: ./api
+          file: ./api/Dockerfile.prod
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Fetch ACR admin password from Azure Key Vault
-        uses: azure/cli@v2
+      # This step generates an artifact attestation for the image, which is an unforgeable statement about where and how it was built.
+      # It increases supply chain security for people who consume the image.
+      # For more information, see "[AUTOTITLE](/actions/security-guides/using-artifact-attestations-to-establish-provenance-for-builds)."
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v1
         with:
-          inlineScript: |
-            ACR_ADMIN_PASSWORD=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name ACR-ADMIN-PASSWORD --query value -o tsv)
-            echo "ACR_ADMIN_PASSWORD=$ACR_ADMIN_PASSWORD" >> $GITHUB_ENV
-
-      - uses: azure/docker-login@v1
-        with:
-          login-server: ${{ env.ACR_LOGIN_SERVER }}
-          username: ${{ env.ACR_ADMIN_USERNAME }}
-          password: ${{ env.ACR_ADMIN_PASSWORD }}
-
-      - run: |
-          docker build -t termflow-api:latest -f api/Dockerfile.prod api
-          docker tag termflow-api:latest ${{ env.ACR_LOGIN_SERVER }}/termflow-api:${{ steps.commit.outputs.short }}
-          docker push ${{ env.ACR_LOGIN_SERVER }}/termflow-api:${{ steps.commit.outputs.short }}
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
