@@ -11,6 +11,11 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /termflow-api ./cmd/api/main.go
 
 FROM gcr.io/distroless/base-debian11 AS build-release-stage
 
+LABEL org.opencontainers.image.title="Termflow API"
+LABEL org.opencontainers.image.description="API for managing terminal command collections"
+LABEL org.opencontainers.image.version="0.1.1" 
+LABEL org.opencontainers.image.source="https://github.com/endalk200/termflow"
+
 WORKDIR /
 
 COPY --from=build-stage /termflow-api /termflow-api
@@ -20,4 +25,4 @@ EXPOSE 443
 
 USER nonroot:nonroot
 
-ENTRYPOINT ["/termflow-api"]
+CMD ["/termflow-api"]
