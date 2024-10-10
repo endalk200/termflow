@@ -1,9 +1,7 @@
 package server
 
 import (
-	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -18,6 +16,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -41,11 +40,10 @@ func (s *Server) decodeAndValidate(w http.ResponseWriter, r *http.Request, paylo
 var validate *validator.Validate
 
 type signUpRequestPayloadSchema struct {
-	FirstName    string `json:"firstName" validate:"required"`
-	LastName     string `json:"lastName" validate:"required"`
-	Email        string `json:"email" validate:"required,email"`
-	Password     string `json:"password" validate:"required"`
-	GitHubHandle string `json:"githubHandle" validate:""`
+	FirstName string `json:"firstName" validate:"required"`
+	LastName  string `json:"lastName" validate:"required"`
+	Email     string `json:"email" validate:"required,email"`
+	Password  string `json:"password" validate:"required"`
 }
 
 func (s *Server) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -62,11 +60,10 @@ func (s *Server) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	newUser, err := s.db.CreateUser(ctx, models.CreateUserParams{
+	user, err := s.db.CreateUser(ctx, models.CreateUserParams{
 		FirstName:       requestPayload.FirstName,
 		LastName:        requestPayload.LastName,
 		Email:           requestPayload.Email,
-		GithubHandle:    pgtype.Text{String: requestPayload.GitHubHandle, Valid: true},
 		IsEmailVerified: pgtype.Bool{Bool: false, Valid: true},
 		IsActive:        pgtype.Bool{Bool: false, Valid: true},
 		Password:        string(hash),
@@ -92,7 +89,16 @@ func (s *Server) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.Response(w, http.StatusCreated, newUser)
+	responsePayload := map[string]interface{}{
+		"id":                user.ID,
+		"first_name":        user.FirstName,
+		"last_name":         user.LastName,
+		"email":             user.Email,
+		"is_email_verified": user.IsEmailVerified,
+		"isActive":          user.IsActive,
+	}
+
+	utils.Response(w, http.StatusCreated, responsePayload)
 }
 
 type signInRequestPayloadSchema struct {
@@ -121,13 +127,12 @@ func (s *Server) SignIn(w http.ResponseWriter, r *http.Request) {
 		Email: requestPayload.Email,
 	})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			s.logger.Warn("User not found", slog.String("email", requestPayload.Email))
-			s.logger.Error("Failed to fetch user", slog.String("ERROR", err.Error()))
-			utils.ResponseError(w, http.StatusUnauthorized, "Invalid email or password")
+		if err == pgx.ErrNoRows {
+			s.logger.Error("No user with specified email", slog.String("ERROR", err.Error()))
+			utils.ResponseError(w, http.StatusUnauthorized, "Invalid credentials")
 		} else {
-			s.logger.Error("Failed to fetch user", slog.String("ERROR", err.Error()))
-			utils.ResponseError(w, http.StatusInternalServerError, "Internal server error")
+			s.logger.Error("Failed to fetch user due to", slog.String("ERROR", err.Error()))
+			utils.ResponseError(w, http.StatusInternalServerError, "Invalid credentials")
 		}
 
 		return
@@ -140,7 +145,7 @@ func (s *Server) SignIn(w http.ResponseWriter, r *http.Request) {
 			utils.ResponseError(w, http.StatusInternalServerError, "Something went wrong while trying to log you in")
 		} else {
 			s.logger.Error("Invalid password attempt", slog.String("email", requestPayload.Email))
-			utils.ResponseError(w, http.StatusUnauthorized, "Invalid email or password")
+			utils.ResponseError(w, http.StatusUnauthorized, "Invalid credentials")
 		}
 		return
 	}
@@ -184,7 +189,7 @@ func (s *Server) SignIn(w http.ResponseWriter, r *http.Request) {
 	err = s.db.CreateRefreshToken(ctx, models.CreateRefreshTokenParams{
 		UserID:    pgtype.Int8{Int64: int64(user.ID), Valid: true},
 		TokenHash: hashedRefreshToken,
-		ExpiresAt: pgtype.Timestamp{Time: time.Now().Add(time.Hour), Valid: true},
+		ExpiresAt: pgtype.Timestamptz{Time: time.Now().Add(time.Hour), Valid: true},
 	})
 	if err != nil {
 		s.logger.Error("Error during recording of the refresh token", slog.String("ERROR", err.Error()))
@@ -193,14 +198,14 @@ func (s *Server) SignIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responsePayload := map[string]interface{}{
-		"id":           user.ID,
-		"first_name":   user.FirstName,
-		"last_name":    user.LastName,
-		"email":        user.Email,
-		"githubHandle": user.GithubHandle,
-		"isActive":     user.IsActive,
-		"token":        token,
-		"refreshToken": refreshToken,
+		"id":                user.ID,
+		"first_name":        user.FirstName,
+		"last_name":         user.LastName,
+		"email":             user.Email,
+		"is_email_verified": user.IsEmailVerified,
+		"isActive":          user.IsActive,
+		"token":             token,
+		"refreshToken":      refreshToken,
 	}
 
 	utils.Response(w, http.StatusOK, responsePayload)
@@ -215,8 +220,30 @@ func (s *Server) Me(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_userId, _ := strconv.Atoi(userID)
+
+	ctx := r.Context()
+	user, err := s.db.GetUser(ctx, models.GetUserParams{
+		ID: int32(_userId),
+	})
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			s.logger.Error("No user with specified email", slog.String("ERROR", err.Error()))
+			utils.ResponseError(w, http.StatusUnauthorized, "Invalid credentials")
+		} else {
+			s.logger.Error("Failed to fetch user due to", slog.String("ERROR", err.Error()))
+			utils.ResponseError(w, http.StatusInternalServerError, "Invalid credentials")
+		}
+
+		return
+	}
+
 	responsePayload := map[string]interface{}{
-		"id": _userId,
+		"id":                user.ID,
+		"first_name":        user.FirstName,
+		"last_name":         user.LastName,
+		"email":             user.Email,
+		"is_email_verified": user.IsEmailVerified,
+		"isActive":          user.IsActive,
 	}
 
 	utils.Response(w, http.StatusOK, responsePayload)

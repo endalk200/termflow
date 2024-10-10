@@ -16,6 +16,7 @@ const userContextKey contextKey = "userId"
 
 func GetUserFromContext(r *http.Request) (string, bool) {
 	userID, ok := r.Context().Value(userContextKey).(string)
+
 	return userID, ok
 }
 
