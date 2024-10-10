@@ -71,6 +71,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Debug signing variables
+        run: |
+          echo "TAGS: ${TAGS}"
+          echo "DIGEST: ${DIGEST}"
+
       # Sign the resulting Docker image digest except on PRs.
       # This will only write to the public Rekor transparency log when the Docker
       # repository is public to avoid leaking data.  If you would like to publish
@@ -82,6 +87,6 @@ jobs:
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
           STRIPPED_TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          # Use a regex to strip the "refs/tags/" prefix
           SIGNED_TAGS=$(echo "${TAGS}" | sed 's|refs/tags/||g')
+          echo "Signing: ${SIGNED_TAGS}@${DIGEST}"
           echo "${SIGNED_TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
