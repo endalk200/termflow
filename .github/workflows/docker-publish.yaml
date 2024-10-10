@@ -85,8 +85,13 @@ jobs:
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
-          STRIPPED_TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          SIGNED_TAGS=$(echo "${TAGS}" | sed 's|refs/tags/||g')
+          # Strip 'refs/tags/' and 'refs-tags-' from the tag for signing
+          SIGNED_TAGS=$(echo "${TAGS}" | sed 's|refs/tags/||; s|refs-tags-||;')
           echo "Signing: ${SIGNED_TAGS}@${DIGEST}"
-          echo "${SIGNED_TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+          if [[ -n "${DIGEST}" ]]; then
+            cosign sign --yes "${SIGNED_TAGS}@${DIGEST}"
+          else
+            echo "No digest found for signing."
+            exit 1
+          fi
