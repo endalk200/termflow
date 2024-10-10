@@ -2,7 +2,6 @@ package utils
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 )
 
@@ -18,15 +17,15 @@ func Response(w http.ResponseWriter, statusCode int, data interface{}) {
 }
 
 func ResponseError(w http.ResponseWriter, statusCode int, msg string) {
-	if statusCode > 499 {
-		log.Println("Reponding with 5XX error", msg)
-	}
+	// if statusCode > 499 {
+	// 	log.Println("Reponding with 5XX error", msg)
+	// }
 
 	type errResponse struct {
-		Error string `json:"error"`
+		Message string `json:"message"`
 	}
 
 	Response(w, statusCode, errResponse{
-		Error: msg,
+		Message: msg,
 	})
 }
