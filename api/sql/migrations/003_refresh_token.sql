@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE refresh_tokens (
-  id              SERIAL PRIMARY KEY,
-  user_id         BIGINT REFERENCES users(id) ON DELETE CASCADE,
+  id              UUID PRIMARY KEY,
+  user_id         UUID REFERENCES users(id) ON DELETE CASCADE,
 
   token_hash      TEXT NOT NULL,
 

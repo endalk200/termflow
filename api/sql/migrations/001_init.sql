@@ -11,3 +11,5 @@
 --
 -- -- +goose Down
 -- DROP FUNCTION IF EXISTS trigger_set_timestamp;
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

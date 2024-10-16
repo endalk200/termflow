@@ -1,6 +1,6 @@
 -- name: CreateRefreshToken :exec
-INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
-VALUES ($1, $2, $3);
+INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at)
+VALUES (uuid_generate_v4(), $1, $2, $3);
 
 -- name: GetRefreshTokenByUserID :one
 SELECT *

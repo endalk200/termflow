@@ -3,63 +3,21 @@
 //   sqlc v1.27.0
 // source: users.sql
 
-package models
+package repository
 
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
-
-const createUser = `-- name: CreateUser :one
-INSERT INTO users (
-  first_name, last_name, email, is_email_verified, is_active, password
-) VALUES (
-  $1, $2, $3, $4, $5, $6
-)
-RETURNING id, first_name, last_name, password, refresh_token, email, is_email_verified, is_active, created_at, updated_at
-`
-
-type CreateUserParams struct {
-	FirstName       string
-	LastName        string
-	Email           string
-	IsEmailVerified pgtype.Bool
-	IsActive        pgtype.Bool
-	Password        string
-}
-
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, createUser,
-		arg.FirstName,
-		arg.LastName,
-		arg.Email,
-		arg.IsEmailVerified,
-		arg.IsActive,
-		arg.Password,
-	)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.FirstName,
-		&i.LastName,
-		&i.Password,
-		&i.RefreshToken,
-		&i.Email,
-		&i.IsEmailVerified,
-		&i.IsActive,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
 
 const deleteUser = `-- name: DeleteUser :exec
 DELETE FROM users 
 WHERE id = $1
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
+func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, deleteUser, id)
 	return err
 }
@@ -71,8 +29,8 @@ LIMIT 1
 `
 
 type GetUserParams struct {
-	ID    int32
-	Email string
+	ID    uuid.UUID `json:"id"`
+	Email string    `json:"email"`
 }
 
 func (q *Queries) GetUser(ctx context.Context, arg GetUserParams) (User, error) {
@@ -101,24 +59,24 @@ WHERE u.id = $1
 `
 
 type GetUserWithRefreshTokensRow struct {
-	ID              int32
-	FirstName       string
-	LastName        string
-	Password        string
-	RefreshToken    pgtype.Text
-	Email           string
-	IsEmailVerified pgtype.Bool
-	IsActive        pgtype.Bool
-	CreatedAt       pgtype.Timestamptz
-	UpdatedAt       pgtype.Timestamptz
-	ID_2            pgtype.Int4
-	UserID          pgtype.Int8
-	TokenHash       pgtype.Text
-	IssuedAt        pgtype.Timestamptz
-	ExpiresAt       pgtype.Timestamptz
+	ID              uuid.UUID          `json:"id"`
+	FirstName       string             `json:"first_name"`
+	LastName        string             `json:"last_name"`
+	Password        string             `json:"password"`
+	RefreshToken    pgtype.Text        `json:"refresh_token"`
+	Email           string             `json:"email"`
+	IsEmailVerified pgtype.Bool        `json:"is_email_verified"`
+	IsActive        pgtype.Bool        `json:"is_active"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+	ID_2            pgtype.UUID        `json:"id_2"`
+	UserID          pgtype.UUID        `json:"user_id"`
+	TokenHash       pgtype.Text        `json:"token_hash"`
+	IssuedAt        pgtype.Timestamptz `json:"issued_at"`
+	ExpiresAt       pgtype.Timestamptz `json:"expires_at"`
 }
 
-func (q *Queries) GetUserWithRefreshTokens(ctx context.Context, id int32) (GetUserWithRefreshTokensRow, error) {
+func (q *Queries) GetUserWithRefreshTokens(ctx context.Context, id uuid.UUID) (GetUserWithRefreshTokensRow, error) {
 	row := q.db.QueryRow(ctx, getUserWithRefreshTokens, id)
 	var i GetUserWithRefreshTokensRow
 	err := row.Scan(
@@ -141,6 +99,49 @@ func (q *Queries) GetUserWithRefreshTokens(ctx context.Context, id int32) (GetUs
 	return i, err
 }
 
+const insertUser = `-- name: InsertUser :one
+INSERT INTO users (
+  id, first_name, last_name, email, is_email_verified, is_active, password
+) VALUES (
+  uuid_generate_v4(), $1, $2, $3, $4, $5, $6
+)
+RETURNING id, first_name, last_name, password, refresh_token, email, is_email_verified, is_active, created_at, updated_at
+`
+
+type InsertUserParams struct {
+	FirstName       string      `json:"first_name"`
+	LastName        string      `json:"last_name"`
+	Email           string      `json:"email"`
+	IsEmailVerified pgtype.Bool `json:"is_email_verified"`
+	IsActive        pgtype.Bool `json:"is_active"`
+	Password        string      `json:"password"`
+}
+
+func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, insertUser,
+		arg.FirstName,
+		arg.LastName,
+		arg.Email,
+		arg.IsEmailVerified,
+		arg.IsActive,
+		arg.Password,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Password,
+		&i.RefreshToken,
+		&i.Email,
+		&i.IsEmailVerified,
+		&i.IsActive,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listUsers = `-- name: ListUsers :many
 SELECT id, first_name, last_name, password, refresh_token, email, is_email_verified, is_active, created_at, updated_at FROM users
 WHERE ($1 IS NULL OR is_active = $1)
@@ -149,12 +150,12 @@ ORDER BY first_name
 `
 
 type ListUsersParams struct {
-	Column1 interface{}
-	Column2 interface{}
+	IsActive        interface{} `json:"is_active"`
+	IsEmailVerified interface{} `json:"is_email_verified"`
 }
 
 func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error) {
-	rows, err := q.db.Query(ctx, listUsers, arg.Column1, arg.Column2)
+	rows, err := q.db.Query(ctx, listUsers, arg.IsActive, arg.IsEmailVerified)
 	if err != nil {
 		return nil, err
 	}
@@ -192,9 +193,9 @@ WHERE id = $1
 `
 
 type UpdateUserParams struct {
-	ID        int32
-	FirstName string
-	LastName  string
+	ID        uuid.UUID `json:"id"`
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {

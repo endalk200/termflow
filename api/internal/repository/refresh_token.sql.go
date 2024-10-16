@@ -3,11 +3,12 @@
 //   sqlc v1.27.0
 // source: refresh_token.sql
 
-package models
+package repository
 
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -22,14 +23,14 @@ func (q *Queries) CleanupExpiredTokens(ctx context.Context) error {
 }
 
 const createRefreshToken = `-- name: CreateRefreshToken :exec
-INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
-VALUES ($1, $2, $3)
+INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at)
+VALUES (uuid_generate_v4(), $1, $2, $3)
 `
 
 type CreateRefreshTokenParams struct {
-	UserID    pgtype.Int8
-	TokenHash string
-	ExpiresAt pgtype.Timestamptz
+	UserID    pgtype.UUID        `json:"user_id"`
+	TokenHash string             `json:"token_hash"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
 }
 
 func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error {
@@ -42,7 +43,7 @@ DELETE FROM refresh_tokens
 WHERE id = $1
 `
 
-func (q *Queries) DeleteRefreshToken(ctx context.Context, id int32) error {
+func (q *Queries) DeleteRefreshToken(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, deleteRefreshToken, id)
 	return err
 }
@@ -53,7 +54,7 @@ FROM refresh_tokens
 WHERE user_id = $1
 `
 
-func (q *Queries) GetAllRefreshTokensByUserID(ctx context.Context, userID pgtype.Int8) ([]RefreshToken, error) {
+func (q *Queries) GetAllRefreshTokensByUserID(ctx context.Context, userID pgtype.UUID) ([]RefreshToken, error) {
 	rows, err := q.db.Query(ctx, getAllRefreshTokensByUserID, userID)
 	if err != nil {
 		return nil, err
@@ -86,7 +87,7 @@ WHERE user_id = $1 AND revoked = FALSE
 LIMIT 1
 `
 
-func (q *Queries) GetRefreshTokenByUserID(ctx context.Context, userID pgtype.Int8) (RefreshToken, error) {
+func (q *Queries) GetRefreshTokenByUserID(ctx context.Context, userID pgtype.UUID) (RefreshToken, error) {
 	row := q.db.QueryRow(ctx, getRefreshTokenByUserID, userID)
 	var i RefreshToken
 	err := row.Scan(
@@ -105,7 +106,7 @@ SET revoked = TRUE, revoked_at = CURRENT_TIMESTAMP
 WHERE id = $1
 `
 
-func (q *Queries) RevokeRefreshToken(ctx context.Context, id int32) error {
+func (q *Queries) RevokeRefreshToken(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, revokeRefreshToken, id)
 	return err
 }

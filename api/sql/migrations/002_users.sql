@@ -1,6 +1,6 @@
 -- +goose Up
 CREATE TABLE users (
-  id   SERIAL,
+  id UUID PRIMARY KEY,
 
   first_name VARCHAR(255) NOT NULL,
   last_name VARCHAR(255) NOT NULL,
@@ -14,9 +14,7 @@ CREATE TABLE users (
 	is_active BOOLEAN DEFAULT TRUE,
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-  PRIMARY KEY(id)
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Apply trigger for `users` table

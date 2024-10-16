@@ -11,15 +11,15 @@ WHERE u.id = $1;
 
 -- name: ListUsers :many
 SELECT * FROM users
-WHERE ($1 IS NULL OR is_active = $1)
-AND ($2 IS NULL OR is_email_verified = $2)
+WHERE (sqlc.arg(is_active) IS NULL OR is_active = sqlc.arg(is_active))
+AND (sqlc.arg(is_email_verified) IS NULL OR is_email_verified = sqlc.arg(is_email_verified))
 ORDER BY first_name;
 
--- name: CreateUser :one
+-- name: InsertUser :one
 INSERT INTO users (
-  first_name, last_name, email, is_email_verified, is_active, password
+  id, first_name, last_name, email, is_email_verified, is_active, password
 ) VALUES (
-  $1, $2, $3, $4, $5, $6
+  uuid_generate_v4(), $1, $2, $3, $4, $5, $6
 )
 RETURNING *;
 
