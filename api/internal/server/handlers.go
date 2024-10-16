@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"strconv"
 	"time"
 
-	"github.com/endalk200/termflow-api/models"
+	"github.com/endalk200/termflow-api/internal/repository"
 	"github.com/endalk200/termflow-api/pkgs/auth"
 	"github.com/endalk200/termflow-api/pkgs/middleware"
 	"github.com/endalk200/termflow-api/pkgs/utils"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
@@ -60,7 +60,7 @@ func (s *Server) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	user, err := s.db.CreateUser(ctx, models.CreateUserParams{
+	user, err := s.db.InsertUser(ctx, repository.InsertUserParams{
 		FirstName:       requestPayload.FirstName,
 		LastName:        requestPayload.LastName,
 		Email:           requestPayload.Email,
@@ -123,7 +123,7 @@ func (s *Server) SignIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	user, err := s.db.GetUser(ctx, models.GetUserParams{
+	user, err := s.db.GetUser(ctx, repository.GetUserParams{
 		Email: requestPayload.Email,
 	})
 	if err != nil {
@@ -152,7 +152,7 @@ func (s *Server) SignIn(w http.ResponseWriter, r *http.Request) {
 
 	jwtClaims := jwt.RegisteredClaims{
 		Issuer:    "Termflow",
-		Subject:   fmt.Sprintf("%d", user.ID),
+		Subject:   user.ID.String(),
 		Audience:  jwt.ClaimStrings{"https://example.com"},
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -186,8 +186,8 @@ func (s *Server) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.db.CreateRefreshToken(ctx, models.CreateRefreshTokenParams{
-		UserID:    pgtype.Int8{Int64: int64(user.ID), Valid: true},
+	err = s.db.CreateRefreshToken(ctx, repository.CreateRefreshTokenParams{
+		UserID:    pgtype.UUID{Bytes: user.ID, Valid: true},
 		TokenHash: hashedRefreshToken,
 		ExpiresAt: pgtype.Timestamptz{Time: time.Now().Add(time.Hour), Valid: true},
 	})
@@ -219,11 +219,12 @@ func (s *Server) Me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_userId, _ := strconv.Atoi(userID)
+	// TODO: Handle uuid parse error
+	_userId, _ := uuid.Parse(userID)
 
 	ctx := r.Context()
-	user, err := s.db.GetUser(ctx, models.GetUserParams{
-		ID: int32(_userId),
+	user, err := s.db.GetUser(ctx, repository.GetUserParams{
+		ID: _userId,
 	})
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -244,6 +245,7 @@ func (s *Server) Me(w http.ResponseWriter, r *http.Request) {
 		"email":             user.Email,
 		"is_email_verified": user.IsEmailVerified,
 		"isActive":          user.IsActive,
+		"created_at":        user.CreatedAt,
 	}
 
 	utils.Response(w, http.StatusOK, responsePayload)

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/endalk200/termflow-api/models"
+	"github.com/endalk200/termflow-api/internal/repository"
 	"github.com/endalk200/termflow-api/pkgs/config"
 	_ "github.com/joho/godotenv/autoload"
 
@@ -18,7 +18,7 @@ type Server struct {
 	port   int
 	cfg    config.AppConfig
 	logger *slog.Logger
-	db     *models.Queries
+	db     *repository.Queries
 }
 
 func NewServer(logger *slog.Logger) *http.Server {
@@ -35,7 +35,7 @@ func NewServer(logger *slog.Logger) *http.Server {
 		logger.Error("Unable to create connection pool", slog.String("ERROR", err.Error()))
 	}
 
-	queries := models.New(connection)
+	queries := repository.New(connection)
 
 	NewServer := &Server{
 		port:   cfg.ApplicationPort,
