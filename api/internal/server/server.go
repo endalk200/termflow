@@ -19,6 +19,7 @@ type Server struct {
 	cfg    config.AppConfig
 	logger *slog.Logger
 	db     *repository.Queries
+	conn   *pgxpool.Pool
 }
 
 func NewServer(logger *slog.Logger) *http.Server {
@@ -42,6 +43,7 @@ func NewServer(logger *slog.Logger) *http.Server {
 		logger: logger,
 		cfg:    cfg,
 		db:     queries,
+		conn:   connection,
 	}
 
 	server := &http.Server{

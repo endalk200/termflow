@@ -14,15 +14,30 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logging(s.logger))
 
-	r.Post("/api/auth/signup", s.CreateUser)
-	r.Post("/api/auth/signin", s.SignIn)
+	r.Route("/api", func(r chi.Router) {
+		r.Post("/auth/signup", s.CreateUser)
+		r.Post("/auth/signin", s.SignIn)
 
-	r.Get("/api/auth/me", s.Me)
-	// r.With(middleware.Authentication(s.logger)).Get("/api/auth/me", s.Me)
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.Authentication(s.logger))
+			r.Get("/auth/me", s.Me)
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.Authentication(s.logger))
-		r.Get("/api/auth/me", s.Me)
+			r.Route("/tags", func(r chi.Router) {
+				r.Get("/", s.GetTags)
+				r.Post("/", s.CreateTag)
+				r.Put("/{id}", s.UpdateTag)
+				r.Delete("/{id}", s.DeleteTag)
+
+				r.Get("/{id}/commands", s.GetCommandsWithTag)
+			})
+
+			r.Route("/commands", func(r chi.Router) {
+				r.Get("/", s.GetCommands)
+				r.Post("/", s.CreateCommand)
+				r.Put("/{id}", s.UpdateCommand)
+				r.Delete("/{id}", s.DeleteCommand)
+			})
+		})
 	})
 
 	return r
