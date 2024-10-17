@@ -1,0 +1,11 @@
+default:
+  just --list
+
+db-migrate-status: # Check database migration status
+ goose -dir ./sql/migrations postgres postgres://admin:admin@localhost:5432/my-db status
+
+db-migrate-up: # Run database migration
+ goose -dir ./sql/migrations postgres postgres://admin:admin@localhost:5432/my-db up
+
+db-migrate-down:
+ goose -dir ./sql/migrations postgres postgres://admin:admin@localhost:5432/my-db down 
