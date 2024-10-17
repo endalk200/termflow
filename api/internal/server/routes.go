@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
-	validate = validator.New(validator.WithRequiredStructEnabled())
+	Validate = validator.New(validator.WithRequiredStructEnabled())
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logging(s.logger))
