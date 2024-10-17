@@ -1,5 +1,5 @@
 ---
-name: Lint and Test
+name: Lint and Test CLI
 
 on:
   push:
@@ -12,22 +12,11 @@ on:
       - "api/*"
 
 jobs:
-  # build:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #
-  #     - name: Set up Go
-  #       uses: actions/setup-go@v4
-  #       with:
-  #         go-version: "1.23"
-  #
-  #     - name: Build
-  #       working-directory: ./api
-  #       run: go build -v ./...
-
   lint:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./cli
     steps:
       - uses: actions/checkout@v4
 
@@ -38,12 +27,14 @@ jobs:
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
-        working-directory: ./api
         with:
           version: v1.60
 
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./cli
     steps:
       - uses: actions/checkout@v4
 
@@ -53,5 +44,4 @@ jobs:
           go-version: "1.23"
 
       - name: Test
-        working-directory: ./api
         run: go test -v ./...
