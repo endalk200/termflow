@@ -20,7 +20,7 @@ CREATE TABLE tags (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-  UNIQUE (user_id, name), -- Ensures a user cannot have duplicate tag names
+  UNIQUE (name), -- Ensures a user cannot have duplicate tag names
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
