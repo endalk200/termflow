@@ -30,8 +30,12 @@ func (s *Server) CreateCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Handle uuid parse error
-	_userId, _ := uuid.Parse(userID)
+	_userId, err := uuid.Parse(userID)
+	if err != nil {
+		s.logger.Error("Failed to parse userId from request context" + err.Error())
+		utils.ResponseError(w, http.StatusInternalServerError, "Failed to parse auth")
+		return
+	}
 
 	var requestPayload createCommandsRequestPayloadSchema
 	if err := s.DecodeAndValidate(w, r, &requestPayload); err != nil {
@@ -146,8 +150,12 @@ func (s *Server) GetCommands(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Handle uuid parse error
-	_userId, _ := uuid.Parse(userID)
+	_userId, err := uuid.Parse(userID)
+	if err != nil {
+		s.logger.Error("Failed to parse userId from request context" + err.Error())
+		utils.ResponseError(w, http.StatusInternalServerError, "Failed to parse auth")
+		return
+	}
 
 	ctx := r.Context()
 	commands, err := s.db.FindCommandsWithTags(ctx, _userId)
