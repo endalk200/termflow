@@ -71,3 +71,6 @@ terraform.tfvars
 .env.sh
 cli/termflow-cli
 termflow-api
+cli/termflow
+
+bin/*
